@@ -1541,12 +1541,13 @@ def Tisserand(a,a_perturber,inc,ecc):
     tp = a_perturber/a + 2 * np.cos(inc) * np.sqrt(a/a_perturber*(1-ecc*ecc))
     return tp
 #%%
-def truncated_Rayleigh_pdf(x, sigma):
-# Truncated Rayleigh probability density function from the paper this code is written for,
-# ie Matheson/Malhotra/Keane 'A von Mises-Fisher distribution for the Plutinos'.
+# def truncated_rayleigh_pdf(x, sigma):
+def truncated_rayleigh_pdf(x,kappa):
     import numpy as np
+    # equation 26 in the paper
+    sigma = 1/np.sqrt(kappa)
     # equation 28 in the paper
-    C_R = (1-np.exp(-np.pi**2/2/sigma**2))**-1
+    C_R = 1/(1-np.exp(-np.pi**2/2/sigma**2))
     # equation 27 in the paper
     return C_R/sigma**2 * x * np.exp(-x**2/2/sigma**2)
 #%%
