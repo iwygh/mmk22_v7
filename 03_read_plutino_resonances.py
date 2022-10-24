@@ -40,22 +40,40 @@ iPb_deg = [] # inclination, Plutino, barycentric, degrees
 WPb_deg = [] # longitude of ascending node, Plutino, barycentric, degrees
 wPb_deg = [] # argument of perihelion, Plutino, barycentric, degrees
 MPb_deg = [] # mean anomaly, Plutino, barycentric, degrees
+false_negative_list = [] # objects that look resonant in 3:2 but are tagged False
+false_positive_list = [] # objects that don't look resonant in 3:2 but are tagged True
 for ires in range(Nres):
     des = df['resonant_des'][ires]
-    plot_file = 'plot_True_3_2_' + des + '.pdf'
-    if os.path.isfile(os.path.join(path,plot_file)):
-        plut_des.append(des)
-        unpacked = ut.unpack(des)
-        if des == 'D4340':
-            unpacked = '9' # We want the Pluto-Charon barycenter, not the Pluto body center.
-        obj = Horizons(id=unpacked,location=center,epochs=str(JD))
-        el = obj.elements()
-        aPb_au.append(float(el['a'])) # au
-        ePb.append(float(el['e']))
-        iPb_deg.append(float(el['incl'])) # degrees
-        WPb_deg.append(np.mod(float(el['Omega']),360))
-        wPb_deg.append(np.mod(float(el['w']),360))
-        MPb_deg.append(np.mod(float(el['M']),360))
+    if des in false_negative_list:
+        plot_file = 'plot_False_3_2_' + des + '.pdf'
+        if os.path.isfile(os.path.join(path,plot_file)):
+            plut_des.append(des)
+            unpacked = ut.unpack(des)
+            if des == 'D4340':
+                unpacked = '9' # We want the Pluto-Charon barycenter, not the Pluto body center.
+            obj = Horizons(id=unpacked,location=center,epochs=str(JD))
+            el = obj.elements()
+            aPb_au.append(float(el['a'])) # au
+            ePb.append(float(el['e']))
+            iPb_deg.append(float(el['incl'])) # degrees
+            WPb_deg.append(np.mod(float(el['Omega']),360))
+            wPb_deg.append(np.mod(float(el['w']),360))
+            MPb_deg.append(np.mod(float(el['M']),360))
+    elif des not in false_positive_list:
+        plot_file = 'plot_True_3_2_' + des + '.pdf'
+        if os.path.isfile(os.path.join(path,plot_file)):
+            plut_des.append(des)
+            unpacked = ut.unpack(des)
+            if des == 'D4340':
+                unpacked = '9' # We want the Pluto-Charon barycenter, not the Pluto body center.
+            obj = Horizons(id=unpacked,location=center,epochs=str(JD))
+            el = obj.elements()
+            aPb_au.append(float(el['a'])) # au
+            ePb.append(float(el['e']))
+            iPb_deg.append(float(el['incl'])) # degrees
+            WPb_deg.append(np.mod(float(el['Omega']),360))
+            wPb_deg.append(np.mod(float(el['w']),360))
+            MPb_deg.append(np.mod(float(el['M']),360))
 # # make new dataframe with reordered columns
 df2 = pd.DataFrame()
 df2['Packed MPC designation'] = plut_des
