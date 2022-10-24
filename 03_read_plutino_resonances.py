@@ -476,7 +476,7 @@ maxx = 1.1*maxx
 maxy = 1.1*maxy
 ax1.set_xlim([0,maxx])
 ax1.set_ylim([0,maxy])
-titlestr = 'fig3_' + str(Nres)
+titlestr = 'fig3_' + str(Nplut)
 plt.savefig(titlestr + '.eps',dpi=300,bbox_inches='tight',pad_inches=0)
 plt.show()
 #%%
