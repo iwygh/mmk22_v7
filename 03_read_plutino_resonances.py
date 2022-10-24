@@ -402,6 +402,7 @@ vmf_relative_inclinations_radians = np.radians(vmf_relative_inclinations_degrees
 Nhere = 1000000
 rand_vmf = ut.rand_von_mises_fisher(mu=polevec_vmf,kappa=kappa,N=Nhere)
 rand_vmf_relative_inclinations_degrees = []
+rand_vmf_relative_inclinations_radians = []
 for iobj in range(Nhere):
     polevec_obj = rand_vmf[iobj]
     dotted = np.dot(polevec_vmf,polevec_obj)
@@ -409,8 +410,9 @@ for iobj in range(Nhere):
     inclination_radians = np.arccos(normalized)
     inclination_degrees = np.degrees(inclination_radians)
     rand_vmf_relative_inclinations_degrees.append(inclination_degrees)
+    rand_vmf_relative_inclinations_radians.append(inclination_radians)
 rand_vmf_relative_inclinations_degrees = np.array(rand_vmf_relative_inclinations_degrees)
-rand_vmf_relative_inclinations_radians = np.radians(rand_vmf_relative_inclinations_degrees)
+rand_vmf_relative_inclinations_radians = np.array(rand_vmf_relative_inclinations_radians)
 # Anderson-Darling test mentioned in first paragraph of section 3.4
 AD_result = stats.anderson_ksamp([vmf_relative_inclinations_radians,\
                                   rand_vmf_relative_inclinations_radians])
@@ -419,41 +421,44 @@ radians_vec = np.linspace(0,np.max(rand_vmf_relative_inclinations_radians),num=1
 # equation 22 in paper
 curve_vec = kappa/(np.exp(kappa)-np.exp(-kappa))*\
     np.exp(kappa*np.cos(radians_vec))*np.sin(radians_vec)
+curve_vec = np.radians(curve_vec) # x-axis is stretched by radians->degrees for plotting,
+# so y axis needs to be squeezed by that amount to have same area under plot
 fig = plt.figure(figsize=(2,2))
 ax1  = fig.add_subplot(111)
 ax1.set_xlabel('Relative inclination (degrees)')
-ax1.set_xticks(np.radians([0,10,20,30,40]))
-ax1.set_xticklabels(['0','10','20','30','40'])
+# ax1.set_xticks(np.radians([0,10,20,30,40]))
+# ax1.set_xticklabels(['0','10','20','30','40'])
 plt.rcParams['font.size'] = 6
-data = vmf_relative_inclinations_radians
-myHist  = ax1.hist(data, bins=20,density=True,histtype='bar',ec='black',alpha=0.25,zorder=3)
-x = np.linspace(0,np.max(vmf_relative_inclinations_radians),num=1000)
+data = vmf_relative_inclinations_degrees
+myHist = ax1.hist(data, bins=20,density=True,histtype='bar',ec='black',alpha=0.25,zorder=3)
 # plot exact relative inclination pdf of vmf distribution using kappa from sample
-g = ax1.plot(radians_vec[0:-1:100],curve_vec[0:-1:100],color='gold',zorder=3,lw=1)
-# plot truncated Rayleigh pdf distribution using least-squares kappa
-initial_guess = sigma
+g = ax1.plot(degrees_vec[0:-1:100],curve_vec[0:-1:100],color='gold',zorder=3,lw=1)
+# plot truncated rayleigh pdf distribution using least-squares kappa
+initial_guess = kappa
 xdata = myHist[1]
 xdata = xdata[0:len(xdata)-1]
 ydata = myHist[0]
 dx = xdata[1]-xdata[0]
-print('bin width = ',np.degrees(dx),'deg')
-xdata = xdata
-ydata = ydata
-popt,pcov = optimization.curve_fit(f=ut.truncated_Rayleigh_pdf, xdata=xdata, ydata=ydata, \
+print('bin_width = ',dx,'deg')
+xdata = np.radians(xdata)
+ydata = np.degrees(ydata)
+popt,pcov = optimization.curve_fit(f=ut.truncated_rayleigh_pdf, xdata=xdata, ydata=ydata, \
        p0=initial_guess)
-best_fit_sigma = popt[0]
-best_fit_kappa = best_fit_sigma**-2
+best_fit_kappa = popt[0]
 print('best_fit_kappa =',best_fit_kappa)
-print('best_fit_sigma =',np.degrees(best_fit_sigma),'deg')
-curve_vec_2 = ut.truncated_Rayleigh_pdf(x,best_fit_sigma)
-h = ax1.plot(x[0:-1:10],curve_vec_2[0:-1:10],color='yellowgreen',zorder=15,lw=1)
-maxx = np.max([np.max(vmf_relative_inclinations_radians),np.max(i_array_post)])
+print('best_fit_sigma =',np.degrees(best_fit_kappa**-0.5),'deg')
+x = np.linspace(0,np.max(vmf_relative_inclinations_radians),num=1000)
+curve_vec_2 = ut.truncated_rayleigh_pdf(x,best_fit_kappa)
+curve_vec_2 = np.radians(curve_vec_2) # x-axis is stretched by radians->degrees for plotting,
+# so y axis needs to be squeezed by that amount to have same area under plot
+h = ax1.plot(np.degrees(x[0:-1:10]),curve_vec_2[0:-1:10],color='yellowgreen',zorder=15,lw=1)
+maxx = np.max([np.max(vmf_relative_inclinations_degrees),np.max(np.degrees(i_array_post))])
 maxy = np.max([np.max(curve_vec),np.max(curve_vec_2),np.max(myHist[0])])
 maxx = 1.1*maxx
 maxy = 1.1*maxy
 ax1.set_xlim([0,maxx])
 ax1.set_ylim([0,maxy])
-titlestr = 'fig3_' + str(Nplut)
+titlestr = 'fig3_' + str(Nres)
 plt.savefig(titlestr + '.eps',dpi=300,bbox_inches='tight',pad_inches=0)
 plt.show()
 #%%
@@ -564,22 +569,22 @@ for ik in range(4):
     color = colors[ik]
     sigma_here = 1/np.sqrt(kappa_here)
     # equation 22 in paper
-    curve_vec = kappa_here/(np.exp(kappa_here)-np.exp(-kappa_here))*\
+    curve_vec_22 = kappa_here/(np.exp(kappa_here)-np.exp(-kappa_here))*\
         np.exp(kappa_here*np.cos(np.radians(degree_vec)))*np.sin(np.radians(degree_vec))
-    curve_vec = np.radians(curve_vec)
+    curve_vec_22 = np.radians(curve_vec_22)
     # equation 28 in paper
     C_R = 1/( 1 - np.exp(-np.pi**2/2/sigma_here**2) )
     # equation 27 in paper
-    curve_vec_2 = C_R/sigma_here**2 * np.radians(degree_vec) * \
+    curve_vec_27 = C_R/sigma_here**2 * np.radians(degree_vec) * \
         np.exp(-np.radians(degree_vec)**2/2/sigma_here**2)
-    curve_vec_2 = np.radians(curve_vec_2)
-    h = ax1.plot(degree_vec[0:-1:10],curve_vec[0:-1:10],color=color,zorder=1,lw=0.5,linestyle='solid')
-    h2 = ax1.plot(degree_vec[0:-1:10],curve_vec_2[0:-1:10],color=color,zorder=2,lw=0.5,linestyle='dotted')
-    h3 = axins.plot(degree_vec[0:-1:10],curve_vec_2[0:-1:10]-curve_vec[0:-1:10],color=color,\
+    curve_vec_27 = np.radians(curve_vec_27)
+    h = ax1.plot(degree_vec[0:-1:10],curve_vec_22[0:-1:10],color=color,zorder=1,lw=0.5,linestyle='solid')
+    h2 = ax1.plot(degree_vec[0:-1:10],curve_vec_27[0:-1:10],color=color,zorder=2,lw=0.5,linestyle='dotted')
+    h3 = axins.plot(degree_vec[0:-1:10],curve_vec_27[0:-1:10]-curve_vec_22[0:-1:10],color=color,\
                     lw=0.5,linestyle='solid')
-    mindiff.append(np.min(curve_vec_2-curve_vec))
-    maxdiff.append(np.max(curve_vec_2-curve_vec))
-    maxy.append(1.1*np.max([np.max(curve_vec),np.max(curve_vec_2)]))
+    mindiff.append(np.min(curve_vec_27-curve_vec_22))
+    maxdiff.append(np.max(curve_vec_27-curve_vec_22))
+    maxy.append(1.1*np.max([np.max(curve_vec_22),np.max(curve_vec_27)]))
 ax1.set_xlim([0,180])
 ax1.set_ylim([0,np.max(maxy)])
 axins.set_xlim([0,180])
